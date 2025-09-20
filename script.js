@@ -1,6 +1,6 @@
 "use strict";
 
-// Data
+// DATA
 const account1 = {
   owner: "nixon ng",
   movements: [200, 450, -400, 3000, -650, -130, 70, 1300],
@@ -87,7 +87,7 @@ const account4 = {
 
 const accounts = [account1, account2, account3, account4];
 
-// Elements
+// ELEMENTS
 const labelWelcome = document.querySelector(".welcome");
 const labelDate = document.querySelector(".date");
 const labelBalance = document.querySelector(".balance__value");
@@ -243,18 +243,41 @@ const updateUI = function (acc) {
   calcDisplaySummary(acc);
 };
 
+//Logout timer function
+const startLogOutTimer = function () {
+  // Set timer to 10 mins
+  let time = 600;
+
+  const tick = function () {
+    const min = String(Math.trunc(time / 60)).padStart(2, 0);
+    const sec = String(time % 60).padStart(2, 0);
+
+    //In each call, update remaining time to UI
+    labelTimer.textContent = `${min}:${sec}`;
+
+    //If timer = 0, stop timer and log user out
+    if (time === 0) {
+      clearInterval(timer);
+      labelWelcome.textContent = `Log in to get started`;
+      containerApp.style.opacity = 0;
+    }
+    //Decrease time every sec
+    time--;
+  };
+
+  //Call timer every second
+  tick();
+  const timer = setInterval(tick, 1000);
+  return timer;
+};
+
 //EVENT HANDLERS----------------------------------------------------------------------------------------------------
 
-// Fake always log in
-let currentAccount = account1;
-updateUI(currentAccount);
-containerApp.style.opacity = 100;
+let currentAccount, timer;
 
-//Experimenting API
-
+// LOGIN BUTTON
 btnLogin.addEventListener("click", function (e) {
   //Prevent form from submiting
-  console.log("login");
   e.preventDefault();
 
   currentAccount = accounts.find(
@@ -279,9 +302,6 @@ btnLogin.addEventListener("click", function (e) {
       year: "numeric",
     };
 
-    // const locale = navigator.language;
-    // console.log(locale);
-
     labelDate.textContent = new Intl.DateTimeFormat(
       currentAccount.locale,
       options
@@ -294,8 +314,11 @@ btnLogin.addEventListener("click", function (e) {
     inputLoginPin.blur();
     updateUI(currentAccount);
   }
+  if (timer) clearInterval(timer);
+  timer = startLogOutTimer(timer);
 });
 
+// TRANSFER BUTTON
 btnTransfer.addEventListener("click", function (e) {
   e.preventDefault();
   const amount = Number(inputTransferAmount.value);
@@ -322,9 +345,14 @@ btnTransfer.addEventListener("click", function (e) {
 
     //Update UI
     updateUI(currentAccount);
+
+    //Reset timer
+    clearInterval(timer);
+    timer = startLogOutTimer();
   }
 });
 
+// CLOSE BUTTON
 btnClose.addEventListener("click", function (e) {
   e.preventDefault();
 
@@ -346,6 +374,7 @@ btnClose.addEventListener("click", function (e) {
   inputCloseUsername.value = inputClosePin.value = "";
 });
 
+// LOAN BUTTON
 btnLoan.addEventListener("click", function (e) {
   e.preventDefault();
 
@@ -354,19 +383,26 @@ btnLoan.addEventListener("click", function (e) {
     amount > 0 &&
     currentAccount.movements.some((mov) => mov >= amount * 0.1)
   ) {
-    // Add movement
-    currentAccount.movements.push(amount);
+    setTimeout(function () {
+      // Add movement
+      currentAccount.movements.push(amount);
 
-    //Add loan date
-    currentAccount.movementsDates.push(new Date().toISOString());
+      //Add loan date
+      currentAccount.movementsDates.push(new Date().toISOString());
 
-    //Update UI
-    updateUI(currentAccount);
+      //Update UI
+      updateUI(currentAccount);
+    }, 2500);
   }
   //clear input field
   inputLoanAmount.value = "";
+
+  //Reset timer
+  clearInterval(timer);
+  timer = startLogOutTimer();
 });
 
+// SORT BUTTON
 let sorted = false;
 btnSort.addEventListener("click", function (e) {
   e.preventDefault();
